@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>SW Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main id="app">
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- PANTALLA 0: SPLASH                          -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="screen screen--active" id="screen-splash">
+      <div class="splash-grid"></div>
+      <div class="splash-scanlines"></div>
+      <div class="splash-vignette"></div>
+      <div class="splash-content">
+        <div class="splash-logo-wrap">
+          <div class="splash-title">SW</div>
+          <div class="splash-tagline">GAME</div>
+        </div>
+        <div class="splash-gems">
+          <span class="splash-gem">◆</span>
+          <span class="splash-gem">◆</span>
+          <span class="splash-gem">◆</span>
+          <span class="splash-gem">◆</span>
+          <span class="splash-gem">◆</span>
+        </div>
+        <button id="splash-start-btn" class="splash-start">PRESS START</button>
+        <p class="splash-credit">FOR ADULTS · 18+</p>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- PANTALLA 1: CONFIGURACIÓN                   -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="screen" id="screen-setup">
+      <div class="screen-header">
+        <div class="logo">SW<span>Game</span></div>
+        <p class="subtitle">Configura tu partida</p>
+      </div>
+      <div class="screen-body">
+        <div class="section">
+          <div class="section-title">Jugadores <span class="player-count" id="player-count">0</span></div>
+          <div id="players-list"></div>
+          <button id="add-player-btn" class="btn btn--ghost btn--add">+ Agregar jugador</button>
+        </div>
+        <div class="section">
+          <div class="section-title">Intensidad máxima</div>
+          <div class="intensity-selector" id="global-intensity">
+            <button class="int-btn active" data-level="1">
+              <span class="int-num">1</span>
+              <span class="int-label">Suave</span>
+            </button>
+            <button class="int-btn" data-level="2">
+              <span class="int-num">2</span>
+              <span class="int-label">Picante</span>
+            </button>
+            <button class="int-btn" data-level="3">
+              <span class="int-num">3</span>
+              <span class="int-label">Caliente</span>
+            </button>
+            <button class="int-btn" data-level="4">
+              <span class="int-num">4</span>
+              <span class="int-label">Sin límites</span>
+            </button>
+          </div>
+          <p class="intensity-hint" id="intensity-hint">Masajes, baile, contacto suave y conexión emocional.</p>
+        </div>
+        <div class="section">
+          <div class="section-title">Rondas</div>
+          <div class="rounds-selector" id="rounds-selector">
+            <button class="round-btn" data-rounds="3">3</button>
+            <button class="round-btn active" data-rounds="5">5</button>
+            <button class="round-btn" data-rounds="8">8</button>
+            <button class="round-btn" data-rounds="12">12</button>
+          </div>
+        </div>
+        <!-- Las categorías se activan/desactivan por jugador en sus preferencias privadas -->
+      </div>
+      <div class="screen-footer">
+        <button id="start-btn" class="btn btn--primary btn--large">Continuar</button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- PANTALLA 2A: COBERTURA PRIVACIDAD           -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="screen" id="screen-prefs-cover">
+      <div class="cover-content">
+        <div class="cover-lock">🔒</div>
+        <p class="cover-pass">Pasa el teléfono a</p>
+        <div class="cover-name" id="cover-name"></div>
+        <p class="cover-hint">Esta pantalla es solo para ti.<br>Nadie más puede verla.</p>
+        <button id="cover-btn" class="btn btn--primary btn--large">Estoy listo/a</button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- PANTALLA 2B: PREFERENCIAS POR JUGADOR       -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="screen" id="screen-preferences">
+      <div class="screen-header">
+        <div class="prefs-title" id="prefs-title">Tus preferencias</div>
+        <div class="prefs-progress" id="prefs-progress"></div>
+      </div>
+      <div class="screen-body" id="prefs-body">
+        <!-- Renderizado dinámicamente -->
+      </div>
+      <div class="screen-footer">
+        <button id="prefs-save-btn" class="btn btn--primary btn--large">Guardar y continuar</button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- PANTALLA 3: JUEGO + RULETA                  -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="screen" id="screen-game">
+      <div class="game-header">
+        <div class="game-turn">
+          <span class="turn-label">Turno de</span>
+          <span class="turn-name" id="turn-name">—</span>
+        </div>
+        <div class="game-meta">
+          <span class="round-badge" id="round-badge">Ronda 1</span>
+          <span class="level-badge" id="level-badge">Nivel 1</span>
+        </div>
+      </div>
+      <div class="roulette-wrapper">
+        <div class="roulette-pointer"></div>
+        <canvas id="roulette-canvas"></canvas>
+      </div>
+      <div class="screen-footer">
+        <button id="spin-btn" class="btn btn--primary btn--large btn--glow">GIRAR</button>
+        <button id="end-game-btn" class="btn btn--ghost btn--small">Terminar juego</button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- PANTALLA 4: RESULTADO DE LA RULETA          -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="screen" id="screen-result">
+      <div class="result-page">
+        <div class="result-meta">
+          <span class="result-category" id="result-category"></span>
+          <span class="result-level" id="result-level"></span>
+        </div>
+        <div class="result-players" id="result-players"></div>
+        <div class="result-text" id="result-text"></div>
+        <div id="result-activity-timer"></div>
+        <div id="result-prendas"></div>
+      </div>
+      <div class="screen-footer">
+        <div class="result-timer" id="result-timer"></div>
+        <button id="result-done-btn" class="btn btn--gold btn--large" disabled>Listo</button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- PANTALLA 5: FIN DEL JUEGO                   -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="screen" id="screen-end">
+      <div class="end-content">
+        <div class="end-glow"></div>
+        <div class="end-icon">✨</div>
+        <h2 class="end-title">¡Fin del juego!</h2>
+        <p class="end-subtitle">Esperamos que hayan disfrutado la experiencia.</p>
+        <button id="play-again-btn" class="btn btn--primary btn--large">Jugar de nuevo</button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Toast notifications -->
+  <div id="toast-container"></div>
+
+  <script src="js/ui.js"></script>
+  <script src="js/players.js"></script>
+  <script src="js/activities.js"></script>
+  <script src="js/roulette.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SW Game — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <!-- Módulo de actividades: provee datos de fallback cuando el servidor no está corriendo -->
+  <script src="js/activities.js"></script>
+  <style>
+    :root {
+      --bg: #0d0d14; --surface: #1a1a2e; --surface-2: #16213e;
+      --purple: #7b2d8b; --purple-light: #a044b5; --purple-dim: rgba(123,45,139,.2);
+      --gold: #c9a84c; --gold-light: #e8c96a; --gold-dim: rgba(201,168,76,.15);
+      --text: #f0e6ff; --text-muted: #8a7a9b; --text-faint: #3d3050;
+      --border: rgba(123,45,139,.3);
+      --r: 10px; --r-sm: 6px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 72px; }
+
+    /* Header */
+    .admin-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; align-items: baseline; gap: 14px; }
+    .admin-logo { font-family: 'Press Start 2P', monospace; font-size: 1rem; color: var(--text); }
+    .admin-logo span { color: var(--gold); }
+    .admin-subtitle { font-size: .78rem; color: var(--text-muted); }
+    .admin-back { display: inline-block; margin: 14px 24px 0; font-size: .8rem; color: var(--text-muted); text-decoration: none; }
+    .admin-back:hover { color: var(--gold); }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin: 16px 24px 0; }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); cursor: pointer; font-family: inherit; font-size: .82rem; font-weight: 600; padding: 10px 20px; margin-bottom: -1px; transition: all .2s; }
+    .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Section container */
+    .admin-wrap { max-width: 780px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── ACTIVITIES TAB ── */
+    .act-toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 20px 0 14px; }
+    .filter-label { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-faint); flex-shrink: 0; }
+    .filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip { background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); border-radius: 20px; padding: 5px 12px; font-size: .75rem; font-family: inherit; cursor: pointer; transition: all .2s; }
+    .chip.active { background: var(--purple-dim); border-color: var(--purple); color: var(--text); }
+    .chip-add { background: none; border: 1px dashed var(--border); color: var(--text-faint); border-radius: 20px; padding: 5px 14px; font-size: .75rem; font-family: inherit; cursor: pointer; transition: all .2s; }
+    .chip-add:hover { border-color: var(--gold); color: var(--gold-light); }
+
+    /* Activity list */
+    #act-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .act-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+    .act-card-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; }
+    .act-card-head:hover { background: rgba(123,45,139,.07); }
+
+    .act-badges { display: flex; gap: 6px; flex-shrink: 0; }
+    .badge { font-size: .62rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+    .badge-cat  { background: var(--purple-dim); color: var(--purple-light); }
+    .badge-int  { background: var(--gold-dim); color: var(--gold-light); }
+    .badge-tgt  { background: rgba(45,107,139,.25); color: #6ab4d8; }
+
+    .act-text-preview { flex: 1; font-size: .82rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .act-toggle-icon { color: var(--text-faint); font-size: .7rem; flex-shrink: 0; transition: transform .2s; }
+    .act-card.expanded .act-toggle-icon { transform: rotate(180deg); }
+
+    .act-card-body { display: none; padding: 14px; border-top: 1px solid var(--border); }
+    .act-card.expanded .act-card-body { display: block; }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field-label { font-size: .65rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-faint); }
+    textarea, select, input[type=text], input[type=number] {
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+      font-size: .85rem; font-family: inherit; border-radius: var(--r-sm); padding: 8px 10px;
+      outline: none; transition: border-color .2s; width: 100%;
+    }
+    textarea { resize: vertical; min-height: 72px; }
+    textarea:focus, select:focus, input:focus { border-color: var(--purple); }
+    select option { background: var(--surface); }
+
+    .act-card-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+    .btn-del { background: none; border: 1px solid rgba(192,57,43,.3); color: #e74c3c; border-radius: var(--r-sm); font-family: inherit; font-size: .78rem; padding: 6px 14px; cursor: pointer; transition: all .2s; }
+    .btn-del:hover { background: rgba(192,57,43,.1); border-color: #c0392b; }
+
+    /* New activity form */
+    .new-act-section { margin-top: 20px; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--r); padding: 16px; }
+    .new-act-title { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px; }
+    .btn-add-act { background: linear-gradient(135deg, var(--purple), var(--purple-light)); border: none; color: #fff; font-family: inherit; font-size: .88rem; font-weight: 700; padding: 10px 22px; border-radius: var(--r-sm); cursor: pointer; transition: all .2s; }
+    .btn-add-act:hover { box-shadow: 0 0 20px rgba(123,45,139,.5); }
+
+    /* ── CATEGORIES TAB ── */
+    .cat-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    .cat-table thead th { padding: 10px 14px; font-size: .65rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--text-faint); border-bottom: 1px solid var(--border); text-align: left; }
+    .cat-row td { padding: 10px 14px; border-bottom: 1px solid rgba(123,45,139,.1); vertical-align: middle; }
+    .cat-row:last-child td { border-bottom: none; }
+    .cat-key { font-size: .72rem; font-family: monospace; color: var(--text-faint); background: var(--surface-2); border-radius: 4px; padding: 3px 7px; white-space: nowrap; }
+    input[type=color] { width: 44px; height: 34px; padding: 2px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface-2); cursor: pointer; }
+
+    /* Save bar */
+    .save-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 24px; background: var(--surface); border-top: 1px solid var(--border); z-index: 100; }
+    #save-status { font-size: .78rem; color: var(--text-muted); flex: 1; }
+    #save-status.ok    { color: #27ae60; }
+    #save-status.error { color: #e74c3c; }
+    #save-status.warn  { color: var(--gold-light); }
+    .btn-save { background: linear-gradient(135deg, var(--purple), var(--purple-light)); border: none; color: #fff; font-family: inherit; font-size: .9rem; font-weight: 700; padding: 10px 26px; border-radius: var(--r-sm); cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .btn-save:hover { box-shadow: 0 0 20px rgba(123,45,139,.5); }
+    .btn-save:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-faint); font-size: .85rem; }
+  </style>
+</head>
+<body>
+
+<header class="admin-header">
+  <div class="admin-logo">SW<span>Admin</span></div>
+  <p class="admin-subtitle">Panel de configuración</p>
+</header>
+
+<div class="admin-wrap">
+  <a href="index.html" class="admin-back">← Volver al juego</a>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="activities">Actividades</button>
+    <button class="tab-btn" data-tab="categories">Categorías</button>
+  </div>
+
+  <!-- ══ TAB: ACTIVIDADES ══ -->
+  <div class="tab-panel active" id="tab-activities">
+    <div class="act-toolbar">
+      <span class="filter-label">Categoría:</span>
+      <div class="filter-chips" id="cat-filter-chips">
+        <button class="chip active" data-cat="">Todas</button>
+      </div>
+      <span class="filter-label" style="margin-left:12px">Nivel:</span>
+      <div class="filter-chips" id="lvl-filter-chips">
+        <button class="chip active" data-lvl="">Todos</button>
+        <button class="chip" data-lvl="1">1</button>
+        <button class="chip" data-lvl="2">2</button>
+        <button class="chip" data-lvl="3">3</button>
+        <button class="chip" data-lvl="4">4</button>
+      </div>
+    </div>
+
+    <div id="act-list"></div>
+
+    <div class="new-act-section">
+      <div class="new-act-title">Nueva actividad</div>
+      <div style="margin-bottom:10px">
+        <div class="field-label" style="margin-bottom:5px">Texto (usa {partner} para el nombre de la pareja)</div>
+        <textarea id="new-text" placeholder="Describe la actividad aquí..."></textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <div class="field-label">Categoría</div>
+          <select id="new-cat"></select>
+        </div>
+        <div class="field">
+          <div class="field-label">Nivel (1–4)</div>
+          <select id="new-int">
+            <option value="1">1 — Suave</option>
+            <option value="2">2 — Picante</option>
+            <option value="3">3 — Caliente</option>
+            <option value="4">4 — Sin límites</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="field-label">Dirigido a</div>
+          <select id="new-target">
+            <option value="solo">Solo</option>
+            <option value="couple_internal">Pareja</option>
+            <option value="couple_external">Externo</option>
+            <option value="group">Grupo</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-end;margin-top:4px">
+        <div class="field" style="width:160px">
+          <div class="field-label">Duración (seg, opcional)</div>
+          <input type="number" id="new-duration" placeholder="ej. 60" min="1" max="600">
+        </div>
+        <button class="btn-add-act" id="add-act-btn">+ Agregar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: CATEGORÍAS ══ -->
+  <div class="tab-panel" id="tab-categories">
+    <table class="cat-table">
+      <thead>
+        <tr>
+          <th>Key</th>
+          <th>Etiqueta</th>
+          <th>Color</th>
+          <th>Nivel mínimo</th>
+        </tr>
+      </thead>
+      <tbody id="cat-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="save-bar">
+  <span id="save-status">Conectando con el servidor…</span>
+  <button class="btn-save" id="save-btn" disabled>Guardar cambios</button>
+</div>
+
+<script>
+(function () {
+  let activities = [];
+  let categories = [];
+  let filterCat  = '';
+  let filterLvl  = '';
+
+  const TARGET_LABELS = {
+    solo: 'Solo', couple_internal: 'Pareja',
+    couple_external: 'Externo', group: 'Grupo',
+  };
+
+  // ── Utils ────────────────────────────────
+  function esc(s) {
+    return String(s ?? '')
+      .replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+      .replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function genId() {
+    return 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  }
+
+  let serverAvailable = false;
+
+  // ── Load ─────────────────────────────────
+  async function load() {
+    let serverActs = null;
+    let serverCfg  = null;
+
+    try {
+      const [actsRes, cfgRes] = await Promise.all([
+        fetch('/api/activities').catch(() => null),
+        fetch('/api/config').catch(() => null),
+      ]);
+      if (actsRes?.ok) serverActs = await actsRes.json();
+      if (cfgRes?.ok)  serverCfg  = await cfgRes.json();
+      if (serverActs && serverCfg) serverAvailable = true;
+    } catch { /* sin servidor */ }
+
+    // Fallback a los datos cargados desde js/activities.js
+    activities = serverActs ?? (typeof Activities !== 'undefined' ? Activities.getActivities() : []);
+    categories = serverCfg?.categories
+      ?? (typeof Activities !== 'undefined' ? Activities.getRouletteSegments() : []);
+
+    if (!serverAvailable) {
+      showOfflineBanner();
+    }
+
+    renderAll();
+    setStatus(serverAvailable ? 'Listo.' : 'Modo sin servidor — los cambios no se guardarán hasta iniciar npm start.', serverAvailable ? '' : 'warn');
+    document.getElementById('save-btn').disabled = false;
+  }
+
+  function showOfflineBanner() {
+    const banner = document.createElement('div');
+    banner.id = 'offline-banner';
+    banner.style.cssText = `
+      background: rgba(201,168,76,.12); border-bottom: 1px solid rgba(201,168,76,.3);
+      color: #e8c96a; font-size: .78rem; padding: 10px 24px;
+      display: flex; align-items: center; gap: 10px;
+    `;
+    banner.innerHTML = `
+      <span style="font-size:1rem">⚠</span>
+      <span>Servidor no disponible — estás viendo los datos actuales del juego en modo lectura.
+      Para guardar cambios, ejecuta <code style="background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px">npm start</code> y recarga esta página.</span>
+    `;
+    document.body.insertBefore(banner, document.body.children[1]);
+  }
+
+  // ── Render All ───────────────────────────
+  function renderAll() {
+    renderCatFilterChips();
+    renderActivityList();
+    renderNewActivityCatSelect();
+    renderCategoriesTable();
+  }
+
+  // ── Category filter chips ─────────────────
+  function renderCatFilterChips() {
+    const wrap = document.getElementById('cat-filter-chips');
+    wrap.innerHTML = '';
+    const allBtn = btn('Todas', 'chip' + (filterCat === '' ? ' active' : ''), '');
+    allBtn.dataset.cat = '';
+    allBtn.addEventListener('click', () => { filterCat = ''; renderCatFilterChips(); renderActivityList(); });
+    wrap.appendChild(allBtn);
+
+    categories.forEach(cat => {
+      const b = btn(cat.label, 'chip' + (filterCat === cat.key ? ' active' : ''), '');
+      b.dataset.cat = cat.key;
+      b.style.setProperty('--cat-color', cat.color);
+      b.addEventListener('click', () => { filterCat = cat.key; renderCatFilterChips(); renderActivityList(); });
+      wrap.appendChild(b);
+    });
+  }
+
+  function btn(text, cls, tag) {
+    const el = document.createElement(tag || 'button');
+    el.className = cls;
+    el.type = 'button';
+    el.textContent = text;
+    return el;
+  }
+
+  // ── Level filter chips ────────────────────
+  document.getElementById('lvl-filter-chips').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    filterLvl = chip.dataset.lvl;
+    document.querySelectorAll('#lvl-filter-chips .chip').forEach(c =>
+      c.classList.toggle('active', c.dataset.lvl === filterLvl));
+    renderActivityList();
+  });
+
+  // ── Activity list ─────────────────────────
+  function renderActivityList() {
+    const list = document.getElementById('act-list');
+    list.innerHTML = '';
+
+    const filtered = activities.filter(a => {
+      if (filterCat && a.category !== filterCat) return false;
+      if (filterLvl && String(a.intensity) !== filterLvl) return false;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="empty-state">No hay actividades con estos filtros.</div>';
+      return;
+    }
+
+    filtered.forEach(act => {
+      const card = buildActivityCard(act);
+      list.appendChild(card);
+    });
+  }
+
+  function getCatColor(key) {
+    return categories.find(c => c.key === key)?.color || '#7b2d8b';
+  }
+  function getCatLabel(key) {
+    return categories.find(c => c.key === key)?.label || key;
+  }
+
+  function buildActivityCard(act) {
+    const card = document.createElement('div');
+    card.className = 'act-card';
+
+    // Head
+    const head = document.createElement('div');
+    head.className = 'act-card-head';
+    head.innerHTML = `
+      <div class="act-badges">
+        <span class="badge badge-cat" style="background:${getCatColor(act.category)}22;color:${getCatColor(act.category)}">${esc(getCatLabel(act.category))}</span>
+        <span class="badge badge-int">Nivel ${act.intensity}</span>
+        <span class="badge badge-tgt">${TARGET_LABELS[act.target] || act.target}</span>
+      </div>
+      <div class="act-text-preview">${esc(act.text)}</div>
+      <span class="act-toggle-icon">▼</span>
+    `;
+    head.addEventListener('click', () => card.classList.toggle('expanded'));
+
+    // Body
+    const body = document.createElement('div');
+    body.className = 'act-card-body';
+
+    const textarea = document.createElement('textarea');
+    textarea.value = act.text;
+    textarea.style.marginBottom = '12px';
+    textarea.style.width = '100%';
+    textarea.addEventListener('change', () => {
+      const i = activities.findIndex(a => a.id === act.id);
+      if (i >= 0) activities[i].text = textarea.value;
+    });
+
+    const row = document.createElement('div');
+    row.className = 'field-row';
+
+    // Category select
+    const catSel = makeSelect(categories.map(c => ({ v: c.key, l: c.label })), act.category);
+    catSel.addEventListener('change', () => {
+      const i = activities.findIndex(a => a.id === act.id);
+      if (i >= 0) activities[i].category = catSel.value;
+      // Update badges
+      const badges = head.querySelector('.act-badges');
+      const color = getCatColor(catSel.value);
+      badges.querySelector('.badge-cat').style.background = color + '22';
+      badges.querySelector('.badge-cat').style.color = color;
+      badges.querySelector('.badge-cat').textContent = getCatLabel(catSel.value);
+    });
+
+    const intSel = makeSelect(
+      [1,2,3,4].map(n => ({ v: n, l: `${n} — ${['','Suave','Picante','Caliente','Sin límites'][n]}` })),
+      act.intensity
+    );
+    intSel.addEventListener('change', () => {
+      const i = activities.findIndex(a => a.id === act.id);
+      if (i >= 0) activities[i].intensity = parseInt(intSel.value);
+      head.querySelector('.badge-int').textContent = 'Nivel ' + intSel.value;
+    });
+
+    const tgtSel = makeSelect(
+      Object.entries(TARGET_LABELS).map(([v,l]) => ({ v, l })),
+      act.target
+    );
+    tgtSel.addEventListener('change', () => {
+      const i = activities.findIndex(a => a.id === act.id);
+      if (i >= 0) activities[i].target = tgtSel.value;
+      head.querySelector('.badge-tgt').textContent = TARGET_LABELS[tgtSel.value];
+    });
+
+    [catSel, intSel, tgtSel].forEach((sel, idx) => {
+      const f = document.createElement('div');
+      f.className = 'field';
+      const l = document.createElement('div');
+      l.className = 'field-label';
+      l.textContent = ['Categoría', 'Nivel', 'Dirigido a'][idx];
+      f.appendChild(l);
+      f.appendChild(sel);
+      row.appendChild(f);
+    });
+
+    // Duration field
+    const durField = document.createElement('div');
+    durField.className = 'field';
+    const durLabel = document.createElement('div');
+    durLabel.className = 'field-label';
+    durLabel.textContent = 'Duración (seg)';
+    const durInput = document.createElement('input');
+    durInput.type = 'number';
+    durInput.placeholder = 'sin timer';
+    durInput.min = 1; durInput.max = 600;
+    durInput.value = act.duration || '';
+    durInput.addEventListener('change', () => {
+      const i = activities.findIndex(a => a.id === act.id);
+      if (i >= 0) {
+        const v = parseInt(durInput.value);
+        activities[i].duration = isNaN(v) ? undefined : v;
+      }
+    });
+    durField.appendChild(durLabel);
+    durField.appendChild(durInput);
+
+    const footer = document.createElement('div');
+    footer.className = 'act-card-footer';
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-del';
+    delBtn.textContent = 'Eliminar actividad';
+    delBtn.addEventListener('click', () => {
+      if (!confirm('¿Eliminar esta actividad?')) return;
+      activities = activities.filter(a => a.id !== act.id);
+      card.remove();
+    });
+    footer.appendChild(delBtn);
+
+    body.appendChild(textarea);
+    body.appendChild(row);
+    body.appendChild(durField);
+    body.appendChild(footer);
+    card.appendChild(head);
+    card.appendChild(body);
+    return card;
+  }
+
+  function makeSelect(options, current) {
+    const sel = document.createElement('select');
+    options.forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o.v;
+      opt.textContent = o.l;
+      if (String(o.v) === String(current)) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    return sel;
+  }
+
+  // ── New activity form ─────────────────────
+  function renderNewActivityCatSelect() {
+    const sel = document.getElementById('new-cat');
+    sel.innerHTML = '';
+    categories.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.key;
+      opt.textContent = c.label;
+      sel.appendChild(opt);
+    });
+  }
+
+  document.getElementById('add-act-btn').addEventListener('click', () => {
+    const text = document.getElementById('new-text').value.trim();
+    if (!text) { alert('El texto no puede estar vacío.'); return; }
+    const dur = parseInt(document.getElementById('new-duration').value);
+    const act = {
+      id:        genId(),
+      text,
+      category:  document.getElementById('new-cat').value,
+      intensity: parseInt(document.getElementById('new-int').value),
+      target:    document.getElementById('new-target').value,
+    };
+    if (!isNaN(dur) && dur > 0) act.duration = dur;
+    activities.push(act);
+    document.getElementById('new-text').value = '';
+    document.getElementById('new-duration').value = '';
+    renderActivityList();
+    setStatus('Actividad añadida. Guarda para persistir.', '');
+  });
+
+  // ── Categories table ──────────────────────
+  function renderCategoriesTable() {
+    const tbody = document.getElementById('cat-tbody');
+    tbody.innerHTML = '';
+    categories.forEach((cat, i) => {
+      const tr = document.createElement('tr');
+      tr.className = 'cat-row';
+
+      const labelInput = document.createElement('input');
+      labelInput.type = 'text';
+      labelInput.value = cat.label;
+      labelInput.addEventListener('input', () => { categories[i].label = labelInput.value; });
+
+      const colorInput = document.createElement('input');
+      colorInput.type = 'color';
+      colorInput.value = cat.color;
+      colorInput.addEventListener('input', () => { categories[i].color = colorInput.value; });
+
+      const lvlSel = makeSelect(
+        [1,2,3,4].map(n => ({ v: n, l: `${n} — ${['','Suave','Picante','Caliente','Sin límites'][n]}` })),
+        cat.minIntensity
+      );
+      lvlSel.addEventListener('change', () => { categories[i].minIntensity = parseInt(lvlSel.value); });
+
+      [
+        document.createElement('td'),
+        document.createElement('td'),
+        document.createElement('td'),
+        document.createElement('td'),
+      ].forEach((td, idx) => {
+        if (idx === 0) { const s = document.createElement('span'); s.className = 'cat-key'; s.textContent = cat.key; td.appendChild(s); }
+        if (idx === 1) td.appendChild(labelInput);
+        if (idx === 2) td.appendChild(colorInput);
+        if (idx === 3) td.appendChild(lvlSel);
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ── Tabs ──────────────────────────────────
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      document.getElementById('tab-' + b.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ── Save ──────────────────────────────────
+  document.getElementById('save-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    setStatus('Guardando…', '');
+
+    // Sync any open textareas
+    document.querySelectorAll('.act-card.expanded textarea').forEach(ta => {
+      const card = ta.closest('.act-card');
+      const head = card.querySelector('.act-text-preview');
+      if (head) head.textContent = ta.value;
+    });
+
+    try {
+      const [r1, r2] = await Promise.all([
+        fetch('/api/activities', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(activities) }),
+        fetch('/api/config',     { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ categories }) }),
+      ]);
+      const d1 = await r1.json();
+      const d2 = await r2.json();
+      if (d1.ok && d2.ok) {
+        setStatus('✓ Guardado correctamente.', 'ok');
+        setTimeout(() => setStatus('', ''), 4000);
+      } else {
+        throw new Error((d1.error || d2.error) || 'Error desconocido');
+      }
+    } catch (e) {
+      setStatus('✗ Error: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  function setStatus(msg, cls) {
+    const el = document.getElementById('save-status');
+    el.textContent = msg;
+    el.className = cls;
+  }
+
+  load();
+})();
+</script>
+</body>
+</html>

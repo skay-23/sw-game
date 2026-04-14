@@ -1,0 +1,10 @@
+{
+  "categories": [
+    { "key": "touch",      "label": "Toque",    "color": "#7b2d8b", "minIntensity": 1 },
+    { "key": "dance",      "label": "Baile",    "color": "#2d6b8b", "minIntensity": 1 },
+    { "key": "connection", "label": "Conexión", "color": "#8b5a2d", "minIntensity": 1 },
+    { "key": "truth",      "label": "Verdad",   "color": "#2d8b5a", "minIntensity": 1 },
+    { "key": "kiss",       "label": "Beso",     "color": "#c9a84c", "minIntensity": 2 },
+    { "key": "strip",      "label": "Prenda",   "color": "#8b2d2d", "minIntensity": 3 }
+  ]
+}

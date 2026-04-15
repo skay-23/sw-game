@@ -3,9 +3,10 @@
    Uso: npm install && npm start
    Admin: http://localhost:3000/admin.html
 ══════════════════════════════════════════════ */
-const express = require('express');
-const fs      = require('fs');
-const path    = require('path');
+const express    = require('express');
+const fs         = require('fs');
+const path       = require('path');
+const { execSync } = require('child_process');
 
 const app            = express();
 const PORT           = process.env.PORT || 3000;
@@ -82,14 +83,24 @@ app.post('/api/activities', (req, res) => {
   }
 });
 
+// Obtiene el token: archivo local → gh CLI → vacío
+function resolveGhToken() {
+  // 1) Archivo guardado manualmente
+  if (fs.existsSync(TOKEN_PATH)) {
+    const t = fs.readFileSync(TOKEN_PATH, 'utf8').trim();
+    if (t) return t;
+  }
+  // 2) Token del CLI de gh (ya autenticado)
+  try {
+    const t = execSync('"C:\\Program Files\\GitHub CLI\\gh.exe" auth token', { encoding: 'utf8' }).trim();
+    if (t) return t;
+  } catch (_) {}
+  return '';
+}
+
 // ── GET /api/gh-token ────────────────────────
 app.get('/api/gh-token', (req, res) => {
-  try {
-    const token = fs.existsSync(TOKEN_PATH) ? fs.readFileSync(TOKEN_PATH, 'utf8').trim() : '';
-    res.json({ token });
-  } catch (e) {
-    res.json({ token: '' });
-  }
+  res.json({ token: resolveGhToken() });
 });
 
 // ── POST /api/gh-token ───────────────────────

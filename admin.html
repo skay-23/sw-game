@@ -276,59 +276,52 @@
     });
   }
 
-  // Obtiene los SHA de blobs de todos los archivos via Git Trees API (más confiable que Contents API)
-  async function getTreeShas(token) {
-    const branchRes = await fetch(
-      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/branches/${GH_BRANCH}`,
-      { headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' } }
-    );
-    if (!branchRes.ok) throw new Error(`No se pudo acceder al repo (${branchRes.status})`);
-    const branch = await branchRes.json();
-    const treeSha = branch.commit.commit.tree.sha;
-
-    const treeRes = await fetch(
-      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/git/trees/${treeSha}?recursive=1`,
-      { headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' } }
-    );
-    if (!treeRes.ok) throw new Error(`No se pudo leer el árbol del repo (${treeRes.status})`);
-    const tree = await treeRes.json();
-
-    const shas = {};
-    (tree.tree || []).forEach(item => { shas[item.path] = item.sha; });
-    return shas;
-  }
-
-  async function commitFile(token, path, content, sha) {
-    const encoded = btoa(unescape(encodeURIComponent(content)));
-    const res = await fetch(
-      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`,
-      {
-        method: 'PUT',
-        headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json', Accept: 'application/vnd.github.v3+json' },
-        body: JSON.stringify({ message: `Admin: actualizar ${path.split('/').pop()}`, content: encoded, sha, branch: GH_BRANCH }),
-      }
-    );
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || `Error ${res.status}`);
-    }
-    return res.json();
-  }
-
+  // GET + PUT secuencial: obtiene el SHA fresco justo antes de cada commit
   async function saveToGitHub(token) {
-    setStatus('Conectando con GitHub…', '');
-    const shas = await getTreeShas(token);
-
-    const shaActs = shas['data/activities.json'];
-    const shaCfg  = shas['data/config.json'];
-    if (!shaActs) throw new Error('No se encontró data/activities.json en el repo');
-    if (!shaCfg)  throw new Error('No se encontró data/config.json en el repo');
-
     setStatus('Guardando en GitHub…', '');
-    await Promise.all([
-      commitFile(token, 'data/activities.json', JSON.stringify(activities, null, 2), shaActs),
-      commitFile(token, 'data/config.json',     JSON.stringify({ categories }, null, 2), shaCfg),
-    ]);
+
+    const base = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents`;
+    const headers = {
+      Authorization: `token ${token}`,
+      Accept: 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    };
+
+    const files = [
+      ['data/activities.json', JSON.stringify(activities, null, 2)],
+      ['data/config.json',     JSON.stringify({ categories }, null, 2)],
+    ];
+
+    for (const [path, content] of files) {
+      // 1) Leer SHA actual del archivo
+      const getRes = await fetch(`${base}/${path}`, { headers });
+      if (!getRes.ok) throw new Error(`No se pudo leer ${path} (${getRes.status})`);
+      const fileInfo = await getRes.json();
+      const sha = fileInfo.sha;
+      if (!sha || sha.length !== 40) throw new Error(`SHA inválido para ${path}: "${sha}"`);
+
+      // 2) Encodear contenido a base64 (soporte Unicode)
+      const bytes = new TextEncoder().encode(content);
+      const binStr = Array.from(bytes, b => String.fromCharCode(b)).join('');
+      const encoded = btoa(binStr);
+
+      // 3) Commitear
+      const putRes = await fetch(`${base}/${path}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          message: `Admin: actualizar ${path.split('/').pop()}`,
+          content: encoded,
+          sha,
+          branch: GH_BRANCH,
+        }),
+      });
+      if (!putRes.ok) {
+        const err = await putRes.json().catch(() => ({}));
+        throw new Error(`${path.split('/').pop()}: ${err.message || putRes.status}`);
+      }
+    }
   }
 
   const TARGET_LABELS = {

@@ -274,17 +274,45 @@
 
     saveBtn.addEventListener('click', async () => {
       const val = input.value.trim();
-      _cachedToken = val;
-      if (val) localStorage.setItem(LS_TOKEN, val);
-      else localStorage.removeItem(LS_TOKEN);
-      // Guardar también en servidor si está disponible
-      await fetch('/api/gh-token', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: val }),
-      }).catch(() => {});
-      input.classList.toggle('has-token', !!val);
-      status.textContent = val ? '✓ Token guardado — los cambios se guardan en GitHub.' : 'Token eliminado.';
-      status.className = val ? 'gh-bar-status ok' : 'gh-bar-status';
+      if (!val) {
+        _cachedToken = '';
+        localStorage.removeItem(LS_TOKEN);
+        await fetch('/api/gh-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: '' }) }).catch(() => {});
+        input.classList.remove('has-token');
+        status.textContent = 'Token eliminado.';
+        status.className = 'gh-bar-status';
+        return;
+      }
+
+      // Validar token contra GitHub API
+      saveBtn.disabled = true;
+      status.textContent = 'Validando…';
+      status.className = 'gh-bar-status';
+      try {
+        const [userRes, repoRes] = await Promise.all([
+          fetch('https://api.github.com/user', { headers: { Authorization: `token ${val}`, Accept: 'application/vnd.github.v3+json' } }),
+          fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}`, { headers: { Authorization: `token ${val}`, Accept: 'application/vnd.github.v3+json' } }),
+        ]);
+        if (!userRes.ok) throw new Error('Token inválido o sin acceso.');
+        if (!repoRes.ok) throw new Error(`Sin acceso al repo ${GH_OWNER}/${GH_REPO}.`);
+        const user = await userRes.json();
+        const repo = await repoRes.json();
+        if (!repo.permissions?.push) throw new Error('El token no tiene permisos de escritura en el repo.');
+
+        // Token válido — guardar
+        _cachedToken = val;
+        localStorage.setItem(LS_TOKEN, val);
+        await fetch('/api/gh-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: val }) }).catch(() => {});
+        input.classList.add('has-token');
+        status.textContent = `✓ Conectado como ${user.login} — listo para guardar en GitHub.`;
+        status.className = 'gh-bar-status ok';
+      } catch (e) {
+        input.classList.remove('has-token');
+        status.textContent = '✗ ' + e.message;
+        status.className = 'gh-bar-status err';
+      } finally {
+        saveBtn.disabled = false;
+      }
     });
   }
 

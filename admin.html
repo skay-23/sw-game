@@ -100,6 +100,17 @@
     .cat-key { font-size: .72rem; font-family: monospace; color: var(--text-faint); background: var(--surface-2); border-radius: 4px; padding: 3px 7px; white-space: nowrap; }
     input[type=color] { width: 44px; height: 34px; padding: 2px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface-2); cursor: pointer; }
 
+    /* GitHub token bar */
+    .gh-bar { display: flex; align-items: center; gap: 10px; padding: 10px 24px; background: var(--surface-2); border-bottom: 1px solid var(--border); font-size: .78rem; }
+    .gh-bar label { color: var(--text-muted); white-space: nowrap; }
+    .gh-bar input { flex: 1; max-width: 340px; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: monospace; font-size: .78rem; padding: 6px 10px; border-radius: var(--r-sm); }
+    .gh-bar input.has-token { border-color: #27ae60; }
+    .gh-bar input:focus { outline: none; border-color: var(--purple); }
+    .gh-bar-status { font-size: .75rem; color: var(--text-faint); }
+    .gh-bar-status.ok { color: #27ae60; }
+    .gh-bar button { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: inherit; font-size: .75rem; padding: 5px 12px; border-radius: var(--r-sm); cursor: pointer; white-space: nowrap; }
+    .gh-bar button:hover { border-color: var(--purple); color: var(--purple-light); }
+
     /* Save bar */
     .save-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 24px; background: var(--surface); border-top: 1px solid var(--border); z-index: 100; }
     #save-status { font-size: .78rem; color: var(--text-muted); flex: 1; }
@@ -109,6 +120,8 @@
     .btn-save { background: linear-gradient(135deg, var(--purple), var(--purple-light)); border: none; color: #fff; font-family: inherit; font-size: .9rem; font-weight: 700; padding: 10px 26px; border-radius: var(--r-sm); cursor: pointer; transition: all .2s; white-space: nowrap; }
     .btn-save:hover { box-shadow: 0 0 20px rgba(123,45,139,.5); }
     .btn-save:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-export { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: inherit; font-size: .82rem; font-weight: 600; padding: 8px 16px; border-radius: var(--r-sm); cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .btn-export:hover { border-color: var(--gold); color: var(--gold-light); }
 
     /* Empty state */
     .empty-state { text-align: center; padding: 40px 20px; color: var(--text-faint); font-size: .85rem; }
@@ -120,6 +133,13 @@
   <div class="admin-logo">SW<span>Admin</span></div>
   <p class="admin-subtitle">Panel de configuración</p>
 </header>
+
+<div class="gh-bar" id="gh-bar">
+  <label>🔑 GitHub Token:</label>
+  <input type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxx  (se guarda solo en este navegador)" autocomplete="off" spellcheck="false">
+  <button id="gh-token-save-btn">Guardar token</button>
+  <span class="gh-bar-status" id="gh-bar-status"></span>
+</div>
 
 <div class="admin-wrap">
   <a href="index.html" class="admin-back">← Volver al juego</a>
@@ -205,7 +225,8 @@
 </div>
 
 <div class="save-bar">
-  <span id="save-status">Conectando con el servidor…</span>
+  <span id="save-status">Conectando…</span>
+  <button class="btn-export" id="export-btn" title="Descargar activities.json para subir a GitHub">⬇ Exportar JSON</button>
   <button class="btn-save" id="save-btn" disabled>Guardar cambios</button>
 </div>
 
@@ -215,6 +236,82 @@
   let categories = [];
   let filterCat  = '';
   let filterLvl  = '';
+
+  // ── GitHub API ───────────────────────────
+  const GH_OWNER  = 'skay-23';
+  const GH_REPO   = 'sw-game';
+  const GH_BRANCH = 'main';
+  const LS_TOKEN  = 'sw_gh_token';
+
+  function getToken() {
+    return localStorage.getItem(LS_TOKEN) || '';
+  }
+
+  function initGhBar() {
+    const input  = document.getElementById('gh-token-input');
+    const saveBtn= document.getElementById('gh-token-save-btn');
+    const status = document.getElementById('gh-bar-status');
+    const token  = getToken();
+    if (token) {
+      input.value = token;
+      input.classList.add('has-token');
+      status.textContent = '✓ Token configurado';
+      status.className = 'gh-bar-status ok';
+    }
+    saveBtn.addEventListener('click', () => {
+      const val = input.value.trim();
+      if (val) {
+        localStorage.setItem(LS_TOKEN, val);
+        input.classList.add('has-token');
+        status.textContent = '✓ Token guardado';
+        status.className = 'gh-bar-status ok';
+      } else {
+        localStorage.removeItem(LS_TOKEN);
+        input.classList.remove('has-token');
+        status.textContent = 'Token eliminado';
+        status.className = 'gh-bar-status';
+      }
+    });
+  }
+
+  async function getFileSha(token, path) {
+    const res = await fetch(
+      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}?ref=${GH_BRANCH}`,
+      { headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' } }
+    );
+    if (!res.ok) throw new Error(`No se pudo obtener SHA de ${path}: ${res.status}`);
+    const data = await res.json();
+    return data.sha;
+  }
+
+  async function commitFile(token, path, content, sha) {
+    const encoded = btoa(unescape(encodeURIComponent(content)));
+    const res = await fetch(
+      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`,
+      {
+        method: 'PUT',
+        headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json', Accept: 'application/vnd.github.v3+json' },
+        body: JSON.stringify({ message: `Admin: actualizar ${path.split('/').pop()}`, content: encoded, sha, branch: GH_BRANCH }),
+      }
+    );
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `Error ${res.status}`);
+    }
+    return res.json();
+  }
+
+  async function saveToGitHub(token) {
+    setStatus('Guardando en GitHub…', '');
+    const [shaActs, shaCfg] = await Promise.all([
+      getFileSha(token, 'data/activities.json'),
+      getFileSha(token, 'data/config.json'),
+    ]);
+    await Promise.all([
+      commitFile(token, 'data/activities.json', JSON.stringify(activities, null, 2), shaActs),
+      commitFile(token, 'data/config.json',     JSON.stringify({ categories }, null, 2), shaCfg),
+    ]);
+  }
 
   const TARGET_LABELS = {
     solo: 'Solo', couple_internal: 'Pareja',
@@ -233,6 +330,9 @@
 
   let serverAvailable = false;
 
+  const LS_ACTS = 'sw_activities';
+  const LS_CFG  = 'sw_config';
+
   // ── Load ─────────────────────────────────
   async function load() {
     let serverActs = null;
@@ -248,21 +348,31 @@
       if (serverActs && serverCfg) serverAvailable = true;
     } catch { /* sin servidor */ }
 
-    // Fallback a los datos cargados desde js/activities.js
-    activities = serverActs ?? (typeof Activities !== 'undefined' ? Activities.getActivities() : []);
-    categories = serverCfg?.categories
+    // Orden de prioridad: servidor → localStorage → fallback hardcodeado
+    const lsActs = (() => { try { const v = localStorage.getItem(LS_ACTS); return v ? JSON.parse(v) : null; } catch { return null; } })();
+    const lsCfg  = (() => { try { const v = localStorage.getItem(LS_CFG);  return v ? JSON.parse(v) : null; } catch { return null; } })();
+
+    activities = serverActs ?? lsActs
+      ?? (typeof Activities !== 'undefined' ? Activities.getActivities() : []);
+    categories = serverCfg?.categories ?? lsCfg?.categories
       ?? (typeof Activities !== 'undefined' ? Activities.getRouletteSegments() : []);
 
     if (!serverAvailable) {
-      showOfflineBanner();
+      showOfflineBanner(!!lsActs);
     }
 
     renderAll();
-    setStatus(serverAvailable ? 'Listo.' : 'Modo sin servidor — los cambios no se guardarán hasta iniciar npm start.', serverAvailable ? '' : 'warn');
+    if (serverAvailable) {
+      setStatus('Listo — servidor activo.', 'ok');
+    } else if (lsActs) {
+      setStatus('Sin servidor — usando datos guardados localmente. Los cambios se guardarán aquí.', 'warn');
+    } else {
+      setStatus('Sin servidor — usando datos base. Los cambios se guardarán localmente.', 'warn');
+    }
     document.getElementById('save-btn').disabled = false;
   }
 
-  function showOfflineBanner() {
+  function showOfflineBanner(hasLocal) {
     const banner = document.createElement('div');
     banner.id = 'offline-banner';
     banner.style.cssText = `
@@ -272,8 +382,8 @@
     `;
     banner.innerHTML = `
       <span style="font-size:1rem">⚠</span>
-      <span>Servidor no disponible — estás viendo los datos actuales del juego en modo lectura.
-      Para guardar cambios, ejecuta <code style="background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px">npm start</code> y recarga esta página.</span>
+      <span>Servidor no disponible — ${hasLocal ? 'usando datos guardados localmente' : 'usando datos base'}.
+      Los cambios se guardan en el navegador. Usá <strong>Exportar JSON</strong> para subir a GitHub.</span>
     `;
     document.body.insertBefore(banner, document.body.children[1]);
   }
@@ -577,24 +687,59 @@
       if (head) head.textContent = ta.value;
     });
 
+    // Siempre guardar en localStorage como respaldo
     try {
-      const [r1, r2] = await Promise.all([
-        fetch('/api/activities', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(activities) }),
-        fetch('/api/config',     { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ categories }) }),
-      ]);
-      const d1 = await r1.json();
-      const d2 = await r2.json();
-      if (d1.ok && d2.ok) {
-        setStatus('✓ Guardado correctamente.', 'ok');
-        setTimeout(() => setStatus('', ''), 4000);
-      } else {
-        throw new Error((d1.error || d2.error) || 'Error desconocido');
+      localStorage.setItem(LS_ACTS, JSON.stringify(activities));
+      localStorage.setItem(LS_CFG,  JSON.stringify({ categories }));
+    } catch (e) { console.warn('localStorage no disponible', e); }
+
+    const ghToken = getToken();
+
+    if (ghToken) {
+      // ── Guardar en GitHub (permanente) ──
+      try {
+        await saveToGitHub(ghToken);
+        setStatus('✓ Guardado en GitHub correctamente.', 'ok');
+      } catch (e) {
+        setStatus('✗ Error GitHub: ' + e.message, 'error');
       }
-    } catch (e) {
-      setStatus('✗ Error: ' + e.message, 'error');
-    } finally {
-      btn.disabled = false;
+    } else if (serverAvailable) {
+      // ── Guardar en servidor local ──
+      try {
+        const [r1, r2] = await Promise.all([
+          fetch('/api/activities', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(activities) }),
+          fetch('/api/config',     { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ categories }) }),
+        ]);
+        const d1 = await r1.json();
+        const d2 = await r2.json();
+        if (d1.ok && d2.ok) {
+          setStatus('✓ Guardado en servidor local.', 'ok');
+        } else {
+          throw new Error((d1.error || d2.error) || 'Error desconocido');
+        }
+      } catch (e) {
+        setStatus('✗ Error servidor: ' + e.message, 'error');
+      }
+    } else {
+      // ── Solo localStorage ──
+      setStatus('✓ Guardado en el navegador. Configurá un token de GitHub para guardado permanente.', 'warn');
     }
+
+    setTimeout(() => setStatus('', ''), 6000);
+    btn.disabled = false;
+  });
+
+  // ── Exportar JSON ────────────────────────
+  document.getElementById('export-btn').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(activities, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'activities.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    setStatus('✓ JSON descargado — reemplazá data/activities.json y hacé commit.', 'ok');
+    setTimeout(() => setStatus('', ''), 5000);
   });
 
   function setStatus(msg, cls) {
@@ -603,6 +748,7 @@
     el.className = cls;
   }
 
+  initGhBar();
   load();
 })();
 </script>

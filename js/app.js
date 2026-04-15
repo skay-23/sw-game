@@ -289,9 +289,13 @@
     const prendasContainer = $('result-prendas');
     prendasContainer.innerHTML = '';
     if (activity.category === 'strip') {
+      // Solo mostrar las prendas de quien las pierde:
+      // - grupo: todos; solo: el jugador activo; pareja: solo el/la partner
       const involved = activity.target === 'group'
         ? State.turnOrder
-        : [primary, ...partners];
+        : activity.target === 'solo'
+          ? [primary]
+          : partners;   // couple_internal / couple_external → solo el partner
       const withPrendas = involved.filter(p => Players.prendasRestantes(p).length > 0);
       if (withPrendas.length > 0) {
         prendasContainer.appendChild(UI.buildPrendasTracker(withPrendas, (player, prenda) => {
@@ -432,13 +436,34 @@
     const configPromise     = fetchWithTimeout('/api/config', 1500);
     const activitiesPromise = fetchWithTimeout('/api/activities', 1500);
 
+    // Leer localStorage como fallback cuando el servidor no está disponible
+    function loadFromLocalStorage() {
+      try {
+        const lsActs = localStorage.getItem('sw_activities');
+        const lsCfg  = localStorage.getItem('sw_config');
+        if (lsActs) {
+          const acts = JSON.parse(lsActs);
+          if (Array.isArray(acts) && acts.length > 0) Activities.setActivities(acts);
+        }
+        if (lsCfg) {
+          const cfg = JSON.parse(lsCfg);
+          if (Array.isArray(cfg.categories)) Activities.setCategories(cfg.categories);
+        }
+      } catch (e) { /* localStorage no disponible */ }
+    }
+
     $('splash-start-btn').addEventListener('click', async () => {
       const [config, activities] = await Promise.all([configPromise, activitiesPromise]);
-      if (config) {
-        if (Array.isArray(config.categories)) Activities.setCategories(config.categories);
+
+      if (config && Array.isArray(config.categories)) {
+        Activities.setCategories(config.categories);
       }
       if (Array.isArray(activities) && activities.length > 0) {
         Activities.setActivities(activities);
+      }
+      // Si el servidor no respondió, usar localStorage (datos guardados desde el admin)
+      if (!config && !activities) {
+        loadFromLocalStorage();
       }
 
       // Inicializar setup

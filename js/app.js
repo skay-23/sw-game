@@ -38,17 +38,9 @@
 
       nameInput.value = player.name;
 
-      // Name change
+      // Name change — solo actualiza el estado, sin reconstruir el DOM
       nameInput.addEventListener('input', () => {
         player.name = nameInput.value;
-        refreshPlayerList();
-        const rows = playersList.querySelectorAll('.player-row');
-        const input = rows[i]?.querySelector('.player-name-input');
-        if (input) {
-          input.focus();
-          const len = input.value.length;
-          input.setSelectionRange(len, len);
-        }
       });
 
       // Remove

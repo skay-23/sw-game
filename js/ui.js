@@ -354,6 +354,11 @@ const UI = (() => {
     container.appendChild(primaryPill);
 
     partners.forEach(p => {
+      const arrow = document.createElement('span');
+      arrow.className = 'player-pill-arrow';
+      arrow.textContent = '→';
+      container.appendChild(arrow);
+
       const pill = document.createElement('div');
       pill.className = 'player-pill';
       pill.textContent = p.name;

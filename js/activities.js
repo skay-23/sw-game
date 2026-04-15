@@ -288,9 +288,14 @@ const Activities = (() => {
   function selectActivity(state) {
     const primary = state.turnOrder[state.currentPlayerIndex];
     let candidates = getCandidates(state);
+    const intensity = getEffectiveIntensity(state);
 
-    // Shuffle for variety
-    candidates = candidates.slice().sort(() => Math.random() - 0.5);
+    // Priorizar actividades al nivel actual; caer a niveles inferiores solo si es necesario
+    // Ordenar: primero por intensidad desc, luego aleatorio dentro del mismo nivel
+    candidates = candidates.slice().sort((a, b) => {
+      if (b.intensity !== a.intensity) return b.intensity - a.intensity;
+      return Math.random() - 0.5;
+    });
 
     for (const activity of candidates) {
       const partners = assignPartner(activity, primary, state);

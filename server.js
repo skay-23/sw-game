@@ -11,6 +11,7 @@ const app            = express();
 const PORT           = process.env.PORT || 3000;
 const CONFIG_PATH    = path.join(__dirname, 'data', 'config.json');
 const ACTIVITIES_PATH = path.join(__dirname, 'data', 'activities.json');
+const TOKEN_PATH      = path.join(__dirname, 'data', '.gh-token');
 
 app.use(express.json());
 
@@ -78,6 +79,27 @@ app.post('/api/activities', (req, res) => {
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: 'No se pudo guardar las actividades.' });
+  }
+});
+
+// ── GET /api/gh-token ────────────────────────
+app.get('/api/gh-token', (req, res) => {
+  try {
+    const token = fs.existsSync(TOKEN_PATH) ? fs.readFileSync(TOKEN_PATH, 'utf8').trim() : '';
+    res.json({ token });
+  } catch (e) {
+    res.json({ token: '' });
+  }
+});
+
+// ── POST /api/gh-token ───────────────────────
+app.post('/api/gh-token', (req, res) => {
+  const { token } = req.body || {};
+  try {
+    fs.writeFileSync(TOKEN_PATH, (token || '').trim(), 'utf8');
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'No se pudo guardar el token.' });
   }
 });
 

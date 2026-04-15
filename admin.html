@@ -245,33 +245,61 @@
   const GH_BRANCH = 'main';
   const LS_TOKEN  = 'sw_gh_token';
 
+  let _cachedToken = '';
+
   function getToken() {
-    return localStorage.getItem(LS_TOKEN) || '';
+    return _cachedToken || localStorage.getItem(LS_TOKEN) || '';
   }
 
-  function initGhBar() {
-    const input  = document.getElementById('gh-token-input');
-    const saveBtn= document.getElementById('gh-token-save-btn');
-    const status = document.getElementById('gh-bar-status');
-    const token  = getToken();
+  async function initGhBar() {
+    const input   = document.getElementById('gh-token-input');
+    const saveBtn = document.getElementById('gh-token-save-btn');
+    const status  = document.getElementById('gh-bar-status');
+
+    // Cargar token: servidor primero, fallback localStorage
+    try {
+      const res = await fetch('/api/gh-token').catch(() => null);
+      if (res?.ok) {
+        const data = await res.json();
+        if (data.token) {
+          _cachedToken = data.token;
+          localStorage.setItem(LS_TOKEN, data.token); // sincronizar localStorage
+        }
+      }
+    } catch (_) {}
+
+    const token = getToken();
     if (token) {
       input.value = token;
       input.classList.add('has-token');
       status.textContent = '✓ Token configurado';
       status.className = 'gh-bar-status ok';
     }
-    saveBtn.addEventListener('click', () => {
+
+    saveBtn.addEventListener('click', async () => {
       const val = input.value.trim();
-      if (val) {
-        localStorage.setItem(LS_TOKEN, val);
-        input.classList.add('has-token');
-        status.textContent = '✓ Token guardado';
-        status.className = 'gh-bar-status ok';
-      } else {
-        localStorage.removeItem(LS_TOKEN);
-        input.classList.remove('has-token');
-        status.textContent = 'Token eliminado';
-        status.className = 'gh-bar-status';
+      _cachedToken = val;
+
+      // Guardar en localStorage siempre
+      if (val) localStorage.setItem(LS_TOKEN, val);
+      else localStorage.removeItem(LS_TOKEN);
+
+      // Guardar en servidor si está disponible
+      try {
+        const res = await fetch('/api/gh-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: val }),
+        }).catch(() => null);
+        const saved = res?.ok;
+        input.classList.toggle('has-token', !!val);
+        status.textContent = val
+          ? (saved ? '✓ Token guardado en servidor' : '✓ Token guardado en navegador')
+          : 'Token eliminado';
+        status.className = val ? 'gh-bar-status ok' : 'gh-bar-status';
+      } catch (_) {
+        status.textContent = val ? '✓ Token guardado en navegador' : 'Token eliminado';
+        status.className = val ? 'gh-bar-status ok' : 'gh-bar-status';
       }
     });
   }

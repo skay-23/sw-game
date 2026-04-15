@@ -723,17 +723,22 @@
     } catch (e) { console.warn('localStorage no disponible', e); }
 
     const ghToken = getToken();
+    let savedOk = false;
 
+    // ── 1. GitHub (permanente) ──────────────
     if (ghToken) {
-      // ── Guardar en GitHub (permanente) ──
       try {
         await saveToGitHub(ghToken);
-        setStatus('✓ Guardado en GitHub correctamente.', 'ok');
+        savedOk = true;
       } catch (e) {
         setStatus('✗ Error GitHub: ' + e.message, 'error');
+        btn.disabled = false;
+        return;
       }
-    } else if (serverAvailable) {
-      // ── Guardar en servidor local ──
+    }
+
+    // ── 2. Servidor local (sincroniza archivos) ──
+    if (serverAvailable) {
       try {
         const [r1, r2] = await Promise.all([
           fetch('/api/activities', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(activities) }),
@@ -741,20 +746,20 @@
         ]);
         const d1 = await r1.json();
         const d2 = await r2.json();
-        if (d1.ok && d2.ok) {
-          setStatus('✓ Guardado en servidor local.', 'ok');
-        } else {
-          throw new Error((d1.error || d2.error) || 'Error desconocido');
-        }
+        if (!d1.ok || !d2.ok) throw new Error(d1.error || d2.error);
+        savedOk = true;
       } catch (e) {
-        setStatus('✗ Error servidor: ' + e.message, 'error');
+        if (!ghToken) { setStatus('✗ Error servidor: ' + e.message, 'error'); btn.disabled = false; return; }
       }
+    }
+
+    if (savedOk) {
+      setStatus(ghToken ? '✓ Guardado en GitHub.' : '✓ Guardado en servidor local.', 'ok');
     } else {
-      // ── Solo localStorage ──
       setStatus('✓ Guardado en el navegador. Configurá un token de GitHub para guardado permanente.', 'warn');
     }
 
-    setTimeout(() => setStatus('', ''), 6000);
+    setTimeout(() => setStatus('', ''), 5000);
     btn.disabled = false;
   });
 

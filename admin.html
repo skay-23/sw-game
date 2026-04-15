@@ -102,16 +102,22 @@
     .cat-key { font-size: .72rem; font-family: monospace; color: var(--text-faint); background: var(--surface-2); border-radius: 4px; padding: 3px 7px; white-space: nowrap; }
     input[type=color] { width: 44px; height: 34px; padding: 2px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface-2); cursor: pointer; }
 
-    /* GitHub token bar */
-    .gh-bar { display: flex; align-items: center; gap: 10px; padding: 10px 24px; background: var(--surface-2); border-bottom: 1px solid var(--border); font-size: .78rem; }
-    .gh-bar label { color: var(--text-muted); white-space: nowrap; }
-    .gh-bar input { flex: 1; max-width: 340px; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: monospace; font-size: .78rem; padding: 6px 10px; border-radius: var(--r-sm); }
-    .gh-bar input.has-token { border-color: #27ae60; }
-    .gh-bar input:focus { outline: none; border-color: var(--purple); }
-    .gh-bar-status { font-size: .75rem; color: var(--text-faint); }
-    .gh-bar-status.ok { color: #27ae60; }
-    .gh-bar button { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: inherit; font-size: .75rem; padding: 5px 12px; border-radius: var(--r-sm); cursor: pointer; white-space: nowrap; }
-    .gh-bar button:hover { border-color: var(--purple); color: var(--purple-light); }
+    /* GitHub auth bar */
+    .gh-bar { display: flex; align-items: center; gap: 12px; padding: 10px 24px; background: var(--surface-2); border-bottom: 1px solid var(--border); font-size: .78rem; flex-wrap: wrap; }
+    .gh-bar-status { font-size: .78rem; color: var(--text-faint); flex: 1; }
+    .gh-bar-status.ok  { color: #27ae60; }
+    .gh-bar-status.err { color: #e74c3c; }
+    .gh-connect-btn { display: flex; align-items: center; gap: 6px; background: #24292f; border: 1px solid #444; color: #fff; font-family: inherit; font-size: .78rem; font-weight: 600; padding: 6px 14px; border-radius: var(--r-sm); cursor: pointer; white-space: nowrap; transition: background .15s; }
+    .gh-connect-btn:hover { background: #383e47; }
+    .gh-connect-btn.connected { background: transparent; border-color: #27ae60; color: #27ae60; }
+    .gh-connect-btn.connecting { opacity: .6; cursor: not-allowed; }
+    .gh-device-box { display: none; align-items: center; gap: 14px; background: rgba(201,168,76,.08); border: 1px solid rgba(201,168,76,.3); border-radius: var(--r-sm); padding: 10px 16px; width: 100%; flex-wrap: wrap; }
+    .gh-device-box.visible { display: flex; }
+    .gh-device-code { font-family: monospace; font-size: 1.25rem; font-weight: 700; letter-spacing: .15em; color: var(--gold-light); }
+    .gh-device-hint { font-size: .75rem; color: var(--text-muted); flex: 1; }
+    .gh-device-hint a { color: var(--gold); }
+    .gh-device-spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.2); border-top-color: var(--gold); border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* Save bar */
     .save-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 24px; background: var(--surface); border-top: 1px solid var(--border); z-index: 100; }
@@ -137,10 +143,19 @@
 </header>
 
 <div class="gh-bar" id="gh-bar">
-  <label>🔑 GitHub Token:</label>
-  <input type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxx  (se guarda solo en este navegador)" autocomplete="off" spellcheck="false">
-  <button id="gh-token-save-btn">Guardar token</button>
-  <span class="gh-bar-status" id="gh-bar-status"></span>
+  <button class="gh-connect-btn" id="gh-connect-btn">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    Conectar con GitHub
+  </button>
+  <span class="gh-bar-status" id="gh-bar-status">No conectado — los cambios no se guardarán en GitHub.</span>
+  <div class="gh-device-box" id="gh-device-box">
+    <div class="gh-device-spinner" id="gh-device-spinner"></div>
+    <span class="gh-device-code" id="gh-device-code"></span>
+    <span class="gh-device-hint">
+      Ingresá ese código en <a href="https://github.com/login/device" target="_blank">github.com/login/device</a>
+      y autorizá la app. Esta ventana se actualiza sola.
+    </span>
+  </div>
 </div>
 
 <div class="admin-wrap">
@@ -240,67 +255,102 @@
   let filterLvl  = '';
 
   // ── GitHub API ───────────────────────────
-  const GH_OWNER  = 'skay-23';
-  const GH_REPO   = 'sw-game';
-  const GH_BRANCH = 'main';
-  const LS_TOKEN  = 'sw_gh_token';
+  const GH_OWNER     = 'skay-23';
+  const GH_REPO      = 'sw-game';
+  const GH_BRANCH    = 'main';
+  const GH_CLIENT_ID = 'Ov23liWTUDSBGrBoLunF';
+  const LS_TOKEN     = 'sw_gh_token';
 
   let _cachedToken = '';
 
-  function getToken() {
-    return _cachedToken || localStorage.getItem(LS_TOKEN) || '';
+  function getToken() { return _cachedToken || localStorage.getItem(LS_TOKEN) || ''; }
+
+  async function persistToken(token) {
+    _cachedToken = token;
+    if (token) localStorage.setItem(LS_TOKEN, token);
+    else localStorage.removeItem(LS_TOKEN);
+    await fetch('/api/gh-token', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    }).catch(() => {});
+  }
+
+  function setGhStatus(msg, cls) {
+    const el = document.getElementById('gh-bar-status');
+    el.textContent = msg;
+    el.className = 'gh-bar-status' + (cls ? ' ' + cls : '');
+  }
+
+  function setConnectBtn(state) {
+    const btn = document.getElementById('gh-connect-btn');
+    const icon = `<svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`;
+    btn.disabled = state === 'connecting';
+    btn.className = 'gh-connect-btn' + (state === 'connected' ? ' connected' : state === 'connecting' ? ' connecting' : '');
+    btn.innerHTML = state === 'connected' ? `${icon} Conectado · Desconectar` : `${icon} Conectar con GitHub`;
+  }
+
+  async function startDeviceFlow() {
+    setConnectBtn('connecting');
+    setGhStatus('Iniciando…', '');
+    document.getElementById('gh-device-box').classList.remove('visible');
+    try {
+      const r = await fetch('https://github.com/login/device/code', {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: GH_CLIENT_ID, scope: 'repo' }),
+      });
+      if (!r.ok) throw new Error('No se pudo iniciar la autorización');
+      const { device_code, user_code, verification_uri, expires_in, interval } = await r.json();
+      document.getElementById('gh-device-code').textContent = user_code;
+      document.getElementById('gh-device-box').classList.add('visible');
+      setGhStatus('Esperando que autorices en GitHub…', '');
+      window.open(verification_uri || 'https://github.com/login/device', '_blank');
+      const token = await pollDeviceFlow(device_code, interval || 5, expires_in || 900);
+      await persistToken(token);
+      document.getElementById('gh-device-box').classList.remove('visible');
+      setConnectBtn('connected');
+      setGhStatus('✓ Conectado · Los cambios se guardan directo en el repo.', 'ok');
+    } catch (e) {
+      setConnectBtn('idle');
+      setGhStatus('✗ ' + e.message, 'err');
+      document.getElementById('gh-device-box').classList.remove('visible');
+    }
+  }
+
+  async function pollDeviceFlow(deviceCode, interval, expiresIn) {
+    const deadline = Date.now() + expiresIn * 1000;
+    let wait = interval;
+    while (Date.now() < deadline) {
+      await new Promise(r => setTimeout(r, wait * 1000));
+      const res = await fetch('https://github.com/login/oauth/access_token', {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: GH_CLIENT_ID, device_code: deviceCode, grant_type: 'urn:ietf:params:oauth:grant-type:device_code' }),
+      });
+      const d = await res.json();
+      if (d.access_token) return d.access_token;
+      if (d.error === 'slow_down') { wait += 5; continue; }
+      if (d.error === 'authorization_pending') continue;
+      throw new Error(d.error_description || d.error || 'Error desconocido');
+    }
+    throw new Error('Tiempo de autorización expirado. Intentá de nuevo.');
   }
 
   async function initGhBar() {
-    const input   = document.getElementById('gh-token-input');
-    const saveBtn = document.getElementById('gh-token-save-btn');
-    const status  = document.getElementById('gh-bar-status');
-
-    // Cargar token: servidor primero, fallback localStorage
+    // Cargar token guardado: servidor → localStorage
     try {
       const res = await fetch('/api/gh-token').catch(() => null);
-      if (res?.ok) {
-        const data = await res.json();
-        if (data.token) {
-          _cachedToken = data.token;
-          localStorage.setItem(LS_TOKEN, data.token); // sincronizar localStorage
-        }
-      }
+      if (res?.ok) { const d = await res.json(); if (d.token) { _cachedToken = d.token; localStorage.setItem(LS_TOKEN, d.token); } }
     } catch (_) {}
 
-    const token = getToken();
-    if (token) {
-      input.value = token;
-      input.classList.add('has-token');
-      status.textContent = '✓ Token configurado';
-      status.className = 'gh-bar-status ok';
+    if (getToken()) {
+      setConnectBtn('connected');
+      setGhStatus('✓ Conectado · Los cambios se guardan directo en el repo.', 'ok');
     }
 
-    saveBtn.addEventListener('click', async () => {
-      const val = input.value.trim();
-      _cachedToken = val;
-
-      // Guardar en localStorage siempre
-      if (val) localStorage.setItem(LS_TOKEN, val);
-      else localStorage.removeItem(LS_TOKEN);
-
-      // Guardar en servidor si está disponible
-      try {
-        const res = await fetch('/api/gh-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: val }),
-        }).catch(() => null);
-        const saved = res?.ok;
-        input.classList.toggle('has-token', !!val);
-        status.textContent = val
-          ? (saved ? '✓ Token guardado en servidor' : '✓ Token guardado en navegador')
-          : 'Token eliminado';
-        status.className = val ? 'gh-bar-status ok' : 'gh-bar-status';
-      } catch (_) {
-        status.textContent = val ? '✓ Token guardado en navegador' : 'Token eliminado';
-        status.className = val ? 'gh-bar-status ok' : 'gh-bar-status';
-      }
+    document.getElementById('gh-connect-btn').addEventListener('click', () => {
+      if (getToken()) { persistToken(''); setConnectBtn('idle'); setGhStatus('Desconectado.', ''); }
+      else startDeviceFlow();
     });
   }
 

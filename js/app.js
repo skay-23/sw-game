@@ -453,7 +453,16 @@
     }
 
     $('splash-start-btn').addEventListener('click', async () => {
-      const [config, activities] = await Promise.all([configPromise, activitiesPromise]);
+      let [config, activities] = await Promise.all([configPromise, activitiesPromise]);
+
+      // Si el servidor no respondió, intentar leer los JSON como archivos estáticos
+      // (funciona en GitHub Pages o cualquier hosting estático)
+      if (!activities) {
+        activities = await fetch('data/activities.json').then(r => r.ok ? r.json() : null).catch(() => null);
+      }
+      if (!config) {
+        config = await fetch('data/config.json').then(r => r.ok ? r.json() : null).catch(() => null);
+      }
 
       if (config && Array.isArray(config.categories)) {
         Activities.setCategories(config.categories);
@@ -461,7 +470,7 @@
       if (Array.isArray(activities) && activities.length > 0) {
         Activities.setActivities(activities);
       }
-      // Si el servidor no respondió, usar localStorage (datos guardados desde el admin)
+      // Último recurso: localStorage (datos guardados en el navegador)
       if (!config && !activities) {
         loadFromLocalStorage();
       }

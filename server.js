@@ -13,6 +13,16 @@ const CONFIG_PATH    = path.join(__dirname, 'data', 'config.json');
 const ACTIVITIES_PATH = path.join(__dirname, 'data', 'activities.json');
 
 app.use(express.json());
+
+// Archivos HTML y JS nunca en caché (siempre la versión más nueva)
+app.use((req, res, next) => {
+  if (/\.(html|js)$/.test(req.path)) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+  }
+  next();
+});
+
 app.use(express.static(__dirname));
 
 // ── GET /api/config ──────────────────────────

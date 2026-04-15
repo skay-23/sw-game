@@ -294,8 +294,8 @@
     ];
 
     for (const [path, content] of files) {
-      // 1) Leer SHA actual del archivo
-      const getRes = await fetch(`${base}/${path}`, { headers });
+      // 1) Leer SHA actual del archivo (cache: no-store para no recibir SHA stale)
+      const getRes = await fetch(`${base}/${path}`, { headers, cache: 'no-store' });
       if (!getRes.ok) throw new Error(`No se pudo leer ${path} (${getRes.status})`);
       const fileInfo = await getRes.json();
       const sha = fileInfo.sha;

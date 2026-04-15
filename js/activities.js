@@ -191,7 +191,7 @@ const Activities = (() => {
     if (state.totalRounds <= 1)     return state.globalIntensity;
 
     const progress = (state.currentRound - 1) / (state.totalRounds - 1); // 0.0 → 1.0
-    const intensity = 1 + Math.round(progress * (state.globalIntensity - 1));
+    const intensity = 1 + Math.ceil(progress * (state.globalIntensity - 1));
     return Math.min(state.globalIntensity, Math.max(1, intensity));
   }
 

@@ -6,6 +6,7 @@
 const express    = require('express');
 const fs         = require('fs');
 const path       = require('path');
+const https      = require('https');
 const { execSync } = require('child_process');
 
 const app            = express();
@@ -97,6 +98,38 @@ function resolveGhToken() {
   } catch (_) {}
   return '';
 }
+
+// ── Proxy GitHub OAuth (evita CORS en browser) ──
+function ghPost(urlPath, body) {
+  return new Promise((resolve, reject) => {
+    const data = new URLSearchParams(body).toString();
+    const req = https.request({
+      hostname: 'github.com', path: urlPath, method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json', 'Content-Length': Buffer.byteLength(data) },
+    }, res => {
+      let raw = '';
+      res.on('data', c => raw += c);
+      res.on('end', () => { try { resolve(JSON.parse(raw)); } catch { resolve({}); } });
+    });
+    req.on('error', reject);
+    req.write(data);
+    req.end();
+  });
+}
+
+app.post('/api/github/device/code', async (req, res) => {
+  try {
+    const data = await ghPost('/login/device/code', req.body);
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/github/oauth/token', async (req, res) => {
+  try {
+    const data = await ghPost('/login/oauth/access_token', req.body);
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 // ── GET /api/gh-token ────────────────────────
 app.get('/api/gh-token', (req, res) => {

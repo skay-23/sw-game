@@ -362,29 +362,35 @@
     }
 
     renderAll();
+    const hasToken = !!getToken();
     if (serverAvailable) {
-      setStatus('Listo — servidor activo.', 'ok');
+      setStatus('Listo — servidor activo.' + (hasToken ? ' GitHub token configurado.' : ''), 'ok');
+    } else if (hasToken) {
+      setStatus('Listo — guardado directo en GitHub.', 'ok');
     } else if (lsActs) {
-      setStatus('Sin servidor — usando datos guardados localmente. Los cambios se guardarán aquí.', 'warn');
+      setStatus('Sin servidor ni token — usando datos guardados localmente.', 'warn');
     } else {
-      setStatus('Sin servidor — usando datos base. Los cambios se guardarán localmente.', 'warn');
+      setStatus('Sin servidor ni token — configurá el GitHub Token para guardar permanentemente.', 'warn');
     }
     document.getElementById('save-btn').disabled = false;
   }
 
   function showOfflineBanner(hasLocal) {
+    const hasToken = !!getToken();
     const banner = document.createElement('div');
     banner.id = 'offline-banner';
     banner.style.cssText = `
-      background: rgba(201,168,76,.12); border-bottom: 1px solid rgba(201,168,76,.3);
-      color: #e8c96a; font-size: .78rem; padding: 10px 24px;
+      background: ${hasToken ? 'rgba(39,174,96,.1)' : 'rgba(201,168,76,.12)'};
+      border-bottom: 1px solid ${hasToken ? 'rgba(39,174,96,.3)' : 'rgba(201,168,76,.3)'};
+      color: ${hasToken ? '#2ecc71' : '#e8c96a'}; font-size: .78rem; padding: 10px 24px;
       display: flex; align-items: center; gap: 10px;
     `;
-    banner.innerHTML = `
-      <span style="font-size:1rem">⚠</span>
-      <span>Servidor no disponible — ${hasLocal ? 'usando datos guardados localmente' : 'usando datos base'}.
-      Los cambios se guardan en el navegador. Usá <strong>Exportar JSON</strong> para subir a GitHub.</span>
-    `;
+    banner.innerHTML = hasToken
+      ? `<span style="font-size:1rem">✓</span>
+         <span>Servidor local no activo — <strong>GitHub token configurado</strong>. Los cambios se guardarán directo en el repositorio.</span>`
+      : `<span style="font-size:1rem">⚠</span>
+         <span>Servidor no disponible — ${hasLocal ? 'usando datos guardados localmente' : 'usando datos base'}.
+         Configurá un <strong>GitHub Token</strong> arriba para guardar permanentemente.</span>`;
     document.body.insertBefore(banner, document.body.children[1]);
   }
 

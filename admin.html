@@ -251,7 +251,11 @@
 
   let _cachedToken = '';
 
-  function getToken() { return _cachedToken || localStorage.getItem(LS_TOKEN) || ''; }
+  // Elimina cualquier carácter fuera de ASCII imprimible (BOM, tildes copiadas, etc.)
+  // Los headers HTTP solo aceptan ISO-8859-1; los tokens de GitHub son ASCII puro.
+  function sanitizeToken(t) { return (t || '').replace(/[^\x20-\x7E]/g, '').trim(); }
+
+  function getToken() { return sanitizeToken(_cachedToken || localStorage.getItem(LS_TOKEN) || ''); }
 
   async function initGhBar() {
     const input   = document.getElementById('gh-token-input');
@@ -261,7 +265,7 @@
     // Cargar token: servidor local → localStorage
     try {
       const res = await fetch('/api/gh-token').catch(() => null);
-      if (res?.ok) { const d = await res.json(); if (d.token) { _cachedToken = d.token; localStorage.setItem(LS_TOKEN, d.token); } }
+      if (res?.ok) { const d = await res.json(); if (d.token) { _cachedToken = sanitizeToken(d.token); localStorage.setItem(LS_TOKEN, _cachedToken); } }
     } catch (_) {}
 
     const token = getToken();
@@ -273,7 +277,7 @@
     }
 
     saveBtn.addEventListener('click', async () => {
-      const val = input.value.trim();
+      const val = sanitizeToken(input.value);
       if (!val) {
         _cachedToken = '';
         localStorage.removeItem(LS_TOKEN);

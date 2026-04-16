@@ -18,7 +18,8 @@
     "text": "Haz tu movimiento de baile más seductor durante 30 segundos.",
     "intensity": 1,
     "target": "solo",
-    "category": "dance"
+    "category": "dance",
+    "duration": 30
   },
   {
     "id": "a004",
@@ -39,14 +40,16 @@
     "text": "Dale a {partner} un masaje de hombros durante 60 segundos.",
     "intensity": 1,
     "target": "couple_internal",
-    "category": "touch"
+    "category": "touch",
+    "duration": 60
   },
   {
     "id": "a011",
     "text": "Mira a los ojos de {partner} en silencio durante 30 segundos. Sin reírse.",
     "intensity": 1,
     "target": "couple_internal",
-    "category": "connection"
+    "category": "connection",
+    "duration": 30
   },
   {
     "id": "a012",
@@ -60,28 +63,32 @@
     "text": "Acaricia suavemente el cabello de {partner} durante 30 segundos.",
     "intensity": 1,
     "target": "couple_internal",
-    "category": "touch"
+    "category": "touch",
+    "duration": 30
   },
   {
     "id": "a014",
     "text": "Baila lento abrazado/a a {partner} durante 60 segundos.",
     "intensity": 1,
     "target": "couple_internal",
-    "category": "dance"
+    "category": "dance",
+    "duration": 60
   },
   {
     "id": "a015",
     "text": "Dale a {partner} un masaje en las manos durante un minuto.",
     "intensity": 1,
     "target": "couple_internal",
-    "category": "touch"
+    "category": "touch",
+    "duration": 60
   },
   {
     "id": "a020",
     "text": "Dale a {partner} un abrazo de al menos 15 segundos.",
     "intensity": 1,
     "target": "couple_external",
-    "category": "touch"
+    "category": "touch",
+    "duration": 15
   },
   {
     "id": "a021",
@@ -95,14 +102,16 @@
     "text": "Baila 60 segundos con {partner}.",
     "intensity": 1,
     "target": "couple_external",
-    "category": "dance"
+    "category": "dance",
+    "duration": 60
   },
   {
     "id": "a023",
     "text": "Dale a {partner} un masaje en las manos durante un minuto.",
     "intensity": 1,
     "target": "couple_external",
-    "category": "touch"
+    "category": "touch",
+    "duration": 60
   },
   {
     "id": "a024",
@@ -116,7 +125,8 @@
     "text": "Todo el grupo forma un círculo y se dan un masaje de hombros en cadena durante 60 segundos.",
     "intensity": 1,
     "target": "group",
-    "category": "touch"
+    "category": "touch",
+    "duration": 60
   },
   {
     "id": "a031",
@@ -144,7 +154,8 @@
     "text": "Actúa durante 30 segundos como si estuvieras seduciendo a alguien. El grupo juzga.",
     "intensity": 2,
     "target": "solo",
-    "category": "dance"
+    "category": "dance",
+    "duration": 30
   },
   {
     "id": "b003",
@@ -165,21 +176,24 @@
     "text": "Besa a {partner} durante al menos 15 segundos.",
     "intensity": 2,
     "target": "couple_internal",
-    "category": "kiss"
+    "category": "kiss",
+    "duration": 15
   },
   {
     "id": "b011",
     "text": "Besa lentamente el cuello de {partner} durante 30 segundos.",
     "intensity": 2,
     "target": "couple_internal",
-    "category": "kiss"
+    "category": "kiss",
+    "duration": 30
   },
   {
     "id": "b012",
     "text": "Acaricia la espalda de {partner} por dentro de la ropa durante 30 segundos.",
     "intensity": 2,
     "target": "couple_internal",
-    "category": "touch"
+    "category": "touch",
+    "duration": 30
   },
   {
     "id": "b013",
@@ -193,7 +207,8 @@
     "text": "Dale a {partner} un masaje en los pies y piernas durante 2 minutos.",
     "intensity": 2,
     "target": "couple_internal",
-    "category": "touch"
+    "category": "touch",
+    "duration": 120
   },
   {
     "id": "b015",
@@ -214,7 +229,8 @@
     "text": "Dale a {partner} un abrazo por detrás, muy cercano, durante 30 segundos.",
     "intensity": 2,
     "target": "couple_external",
-    "category": "touch"
+    "category": "touch",
+    "duration": 30
   },
   {
     "id": "b022",
@@ -235,7 +251,8 @@
     "text": "Dale a {partner} un masaje en hombros y cuello durante 2 minutos.",
     "intensity": 2,
     "target": "couple_external",
-    "category": "touch"
+    "category": "touch",
+    "duration": 120
   },
   {
     "id": "b030",
@@ -277,7 +294,8 @@
     "text": "Haz una pose seductora para el grupo y mantenla 15 segundos.",
     "intensity": 3,
     "target": "solo",
-    "category": "dance"
+    "category": "dance",
+    "duration": 15
   },
   {
     "id": "c004",
@@ -291,7 +309,8 @@
     "text": "Baila de forma sensual para todo el grupo durante un minuto.",
     "intensity": 3,
     "target": "solo",
-    "category": "dance"
+    "category": "dance",
+    "duration": 60
   },
   {
     "id": "c010",
@@ -305,28 +324,32 @@
     "text": "Besa apasionadamente a {partner} durante 30 segundos.",
     "intensity": 3,
     "target": "couple_internal",
-    "category": "kiss"
+    "category": "kiss",
+    "duration": 30
   },
   {
     "id": "c012",
     "text": "Acaricia íntimamente a {partner} donde deseen durante un minuto.",
     "intensity": 3,
     "target": "couple_internal",
-    "category": "touch"
+    "category": "touch",
+    "duration": 60
   },
   {
     "id": "c013",
     "text": "Desnuda la parte superior de {partner} y explora su cuerpo con tus manos durante 2 minutos.",
     "intensity": 3,
     "target": "couple_internal",
-    "category": "strip"
+    "category": "strip",
+    "duration": 120
   },
   {
     "id": "c014",
     "text": "Besa a {partner} de los hombros a los muslos (por encima o sin ropa) durante 2 minutos.",
     "intensity": 3,
     "target": "couple_internal",
-    "category": "kiss"
+    "category": "kiss",
+    "duration": 120
   },
   {
     "id": "c015",
@@ -340,7 +363,8 @@
     "text": "Besa en los labios a {partner} durante 15 segundos.",
     "intensity": 3,
     "target": "couple_external",
-    "category": "kiss"
+    "category": "kiss",
+    "duration": 15
   },
   {
     "id": "c021",
@@ -354,14 +378,16 @@
     "text": "Acaricia la espalda, cintura y caderas de {partner} durante 60 segundos.",
     "intensity": 3,
     "target": "couple_external",
-    "category": "touch"
+    "category": "touch",
+    "duration": 60
   },
   {
     "id": "c023",
     "text": "Besa el cuello y hombros de {partner} durante 30 segundos.",
     "intensity": 3,
     "target": "couple_external",
-    "category": "kiss"
+    "category": "kiss",
+    "duration": 30
   },
   {
     "id": "c024",
@@ -375,7 +401,8 @@
     "text": "Besa apasionadamente a {partner} durante 20 segundos.",
     "intensity": 3,
     "target": "couple_external",
-    "category": "kiss"
+    "category": "kiss",
+    "duration": 20
   },
   {
     "id": "c030",
@@ -410,7 +437,8 @@
     "text": "Tócate de manera sensual frente al grupo durante un minuto.",
     "intensity": 4,
     "target": "solo",
-    "category": "strip"
+    "category": "strip",
+    "duration": 60
   },
   {
     "id": "d002",
@@ -431,28 +459,32 @@
     "text": "Explora el cuerpo de {partner} libremente durante 3 minutos. Sin límites entre ustedes.",
     "intensity": 4,
     "target": "couple_internal",
-    "category": "touch"
+    "category": "touch",
+    "duration": 180
   },
   {
     "id": "d011",
     "text": "Haz lo que {partner} te pida durante 3 minutos.",
     "intensity": 4,
     "target": "couple_internal",
-    "category": "touch"
+    "category": "touch",
+    "duration": 180
   },
   {
     "id": "d012",
     "text": "Dale a {partner} placer oral durante al menos un minuto.",
     "intensity": 4,
     "target": "couple_internal",
-    "category": "kiss"
+    "category": "kiss",
+    "duration": 60
   },
   {
     "id": "d013",
     "text": "Satisface a {partner} con tus manos durante 2 minutos.",
     "intensity": 4,
     "target": "couple_internal",
-    "category": "touch"
+    "category": "touch",
+    "duration": 120
   },
   {
     "id": "d014",
@@ -466,35 +498,40 @@
     "text": "Explora el cuerpo de {partner} durante 3 minutos, como ambos deseen.",
     "intensity": 4,
     "target": "couple_external",
-    "category": "touch"
+    "category": "touch",
+    "duration": 180
   },
   {
     "id": "d021",
     "text": "Besa y acaricia íntimamente a {partner} donde quieran durante 3 minutos.",
     "intensity": 4,
     "target": "couple_external",
-    "category": "kiss"
+    "category": "kiss",
+    "duration": 180
   },
   {
     "id": "d022",
     "text": "{partner} y tú tienen 5 minutos en privado (o en el grupo, si prefieren) para hacer lo que deseen.",
     "intensity": 4,
     "target": "couple_external",
-    "category": "connection"
+    "category": "connection",
+    "duration": 300
   },
   {
     "id": "d023",
     "text": "Dale placer oral a {partner} durante un minuto.",
     "intensity": 4,
     "target": "couple_external",
-    "category": "kiss"
+    "category": "kiss",
+    "duration": 60
   },
   {
     "id": "d024",
     "text": "Satisface a {partner} con tus manos durante 2 minutos.",
     "intensity": 4,
     "target": "couple_external",
-    "category": "touch"
+    "category": "touch",
+    "duration": 120
   },
   {
     "id": "d030",
@@ -508,13 +545,15 @@
     "text": "Cada persona elige a alguien del grupo y lo satisface con sus manos durante 2 minutos.",
     "intensity": 4,
     "target": "group",
-    "category": "touch"
+    "category": "touch",
+    "duration": 120
   },
   {
     "id": "d032",
     "text": "Libre para todos: 5 minutos sin reglas entre quienes lo deseen.",
     "intensity": 4,
     "target": "group",
-    "category": "strip"
+    "category": "strip",
+    "duration": 300
   }
 ]

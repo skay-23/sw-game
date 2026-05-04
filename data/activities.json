@@ -1,7 +1,7 @@
 [
   {
     "id": "a001",
-    "text": "Nombra a la persona del grupo que más te atrae",
+    "text": "Nombra a una persona del grupo que te atrae",
     "intensity": 1,
     "target": "solo",
     "category": "truth"
